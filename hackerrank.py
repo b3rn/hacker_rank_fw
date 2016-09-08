@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+This is a very unofficial SDK for interacting with HackerRank for Work.
+This was developed as a result of really bad, customer-facing, API support from HR.
+Development of this has been an exercise in reverse-engineering. I have been use a proxy
+in order to sniff requests made to HR and have used deductive logic to determine what
+values are allowed, etc.
+
+Use at your own risk
+"""
 import requests
 from pypandoc import convert_file 
 import json
@@ -98,6 +107,7 @@ class HackerRankClient(object):
 
         return self._caller(endpoint, method='PUT', data=json.dumps(data))
 
+
     def get_all_questions(self, question_type='all', qfilter='sudorank'):
         """
         Get all the questions available to the authenticated account
@@ -122,6 +132,19 @@ class HackerRankClient(object):
 
 
     def update_question(self, test_id, question_id, **kwargs):
+        """
+        Updates a pre-existing question in HackerRank
+        kwargs:
+            key:type, val_type: string, desc: what kind of question is it, coding, sudorank, etc
+            key:text, val_type: string, desc: html of the question description
+            key:score, val_type: integer, desc: the score to give the question
+            key:name, val_type: string, desc: the name of the question
+            key:sudorank_os, val_type:string, desc:the os, whether rhel7 or agnostic
+            key:
+        """
+        endpoint = 'tests/%s/questions/%s' % (test_id, question_id)
+        #TODO Validate that the question is in-fact writeable by the authenticated user
         pass
+
 
 

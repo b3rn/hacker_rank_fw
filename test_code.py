@@ -13,6 +13,7 @@ hr = HackerRankClient(token=os.environ.get('HR_KEY'))
 all_tests = hr.get_tests_list()
 
 instructions = convert_file('./description.md', 'html')
+templates_q = convert_file('./ansible_templates.md', 'html')
 setup_script = open('./test.sh', 'r').read()
 tags = ["TALENT ACQUISITION", "CONSULTING SERVICES", "NA", "ANSIBLE", "AUTOMATION"]
 n_tags = ['ANSIBLE TOWER']
@@ -23,7 +24,7 @@ put_data = dict(
     sudorank_setupscript = setup_script,
 )
 
-print json.dumps(hr.get_all_questions(), indent=2)
+print json.dumps(hr.get_all_questions(question_type='personal'), indent=2)
 x
 
 for test in all_tests['data']:
