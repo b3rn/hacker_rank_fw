@@ -73,7 +73,7 @@ class HackerRankClient(object):
         return self._caller(endpoint)
 
 
-    def update_test(self, test_id, data, purge_tags=False):
+    def update_test(self, test_id, data, purge_tags=True):
         """
         # Note that other kwargs may still work, these are simply the ones that have been tested
         VALID KWARGS:
@@ -136,15 +136,33 @@ class HackerRankClient(object):
         Updates a pre-existing question in HackerRank
         kwargs:
             key:type, val_type: string, desc: what kind of question is it, coding, sudorank, etc
-            key:text, val_type: string, desc: html of the question description
+            key:question, val_type: string, desc: html of the question description
             key:score, val_type: integer, desc: the score to give the question
             key:name, val_type: string, desc: the name of the question
-            key:sudorank_os, val_type:string, desc:the os, whether rhel7 or agnostic
-            key:
+            key:sudorank_os, val_type:string, desc:when type of sudorank, the os, whether rhel7 or agnostic
+            key:visible_tags_array, val_type:list, desc:a list of tags for the question to have
+            key:setup, val_type: string, desc: the setup script for the question
+            key:solve, val_type: string, desc: the 'solution' script
+            key:check, val_type: string, desc: the 'check' script
+            key:cleanup, val_type: string, desc: any cleanup script
+            key:internal_notes, val_type: string, desc: any internal use only notes
         """
         endpoint = 'tests/%s/questions/%s' % (test_id, question_id)
         #TODO Validate that the question is in-fact writeable by the authenticated user
-        pass
+
+        if kwargs['type'] == 'sudorank':
+            kwargs['sudorank_scripts'] = dict()
+
+            if 'setup' in kwargs.keys():
+                kwargs['sudorank_scripts']['setup'] = kwargs.pop('setup')
+            if 'solve' in kwargs.keys():
+                kwargs['sudorank_scripts']['solve'] = kwargs.pop('solve')
+            if 'check' in kwargs.keys():
+                kwargs['sudorank_scripts']['check'] = kwargs.pop('check')
+            if 'cleanup' in kwargs.keys():
+                kwargs['sudorank_scripts']['cleanup'] = kwargs.pop('cleanup')
+
+        return self._caller(endpoint, method='PUT', data=json.dumps(kwargs))
 
 
 
