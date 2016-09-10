@@ -11,10 +11,11 @@ import os
 hr = HackerRankClient(token=os.environ.get('HR_KEY'))
 
 all_tests = hr.get_tests_list()
-
 instructions = convert_file('./description.md', 'html')
 templates_q = convert_file('./ansible_templates.md', 'html')
 setup_script = open('./test.sh', 'r').read()
+templates_script = open('./ansible_templates_check.sh').read()
+
 tags = ["TALENT ACQUISITION", "CONSULTING SERVICES", "NA", "ANSIBLE", "AUTOMATION"]
 n_tags = ['ANSIBLE TOWER']
 put_data = dict( 
@@ -24,14 +25,25 @@ put_data = dict(
     sudorank_setupscript = setup_script,
 )
 
-print json.dumps(hr.get_all_questions(question_type='personal'), indent=2)
-x
+q_update = dict(
+    name="My great question",
+    question = templates_q,
+    score = 80,
+    visible_tags_array = ['ansible', 'playbooks', 'Config Management', 'intermediate'],
+    internal_notes = "This question is being managed programatically",
+    type = 'sudorank',
+    check = templates_script,
+)
+
+qname = "Ansible Templates"
 
 for test in all_tests['data']:
-    if test['name'] == "Consulting Services, Automation Architect, Ansible (NA)":
+    if test['name'] == "Dummy Test":
         test_id = test['id']
         #result = hr.update_test(test_id, put_data, purge_tags=True)
-        result = hr.update_test(test_id, put_data)
+        #result = hr.update_test(test_id, put_data)
+        #question = [question['id'] for question in result['data']['questions_data'] if question['name'] == qname][0]
+        update_question_result = hr.create_question(test_id, **q_update)
         try:
             print 'SUCCESS' 
         except TypeError:
