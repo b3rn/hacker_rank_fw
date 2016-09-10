@@ -3,6 +3,20 @@ A Python SDK for Programmatically Interfacing with Hacker Rank for Work
 
 ## Usage
 
+
+**Installation**
+
+From pypi
+`pip install hackerrank`
+
+From source
+```bash
+git clone git@github.com:defionscode/hacker_rank_fw.git hackerrank`
+cd hackerrank/
+python setup.py install
+```
+
+
 For now, you'll want to reference the docstrings of each method in `hackerrank/hackerrank.py` as they are quite descriptive in how to use them.
 
 ```python
