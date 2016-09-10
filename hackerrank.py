@@ -63,14 +63,32 @@ class HackerRankClient(object):
 
 
     def get_tests_list(self):
+        """Get all the tests"""
         params = dict(access='live', limit=100)
         endpoint = 'tests'
         return self._caller(endpoint, query_string=params)
 
 
     def get_test(self, test_id):
+        """ Retrieve a test object by id"""
         endpoint = 'tests/%s' % test_id
         return self._caller(endpoint)
+
+
+    def create_test(self, name, duration):
+        """
+        Create a test object
+        args:
+            name: the name of the test, type: str
+            duration: the duration, in minutes, of the test, type: int
+        """
+        endpoint = 'tests'
+        create_data = dict(name=name, duration=duration)
+        test_id = self._caller(endpoint, method="POST", data=json.dumps(create_data))
+
+        get_test_endpoint = 'tests/%s' % test_id
+
+        return self._caller(get_test_endpoint)
 
 
     def update_test(self, test_id, data, purge_tags=True):
@@ -117,18 +135,84 @@ class HackerRankClient(object):
         """
         # Yes, 'undefined' is actually a part of the URI
         endpoint = 'tests/undefined/library'
+        valid_question_types = [
+            'sudorank',
+            'coding',
+            'database',
+            'design',
+            'android',
+            'project',
+            'multiple',
+            'text',
+            'diagram'
+        ]
         questions = []
         if question_type in ('personal', 'all'):
-            p_query = dict(library='personal_all', filter=qfilter)
-            personal_questions = self._caller(endpoint, query_string=p_query)['model']['questions']
-            questions += personal_questions
+            if qfilter == 'all':
+                for qtype in valid_question_types:
+                    p_query = dict(library='personal_all', filter=qtype)
+                    personal_questions = self._caller(endpoint, query_string=p_query)['model']['questions']
+                    questions += personal_questions
+            else:
+                p_query = dict(library='personal_all', filter=qfilter)
+                personal_questions = self._caller(endpoint, query_string=p_query)['model']['questions']
+                questions += personal_questions
 
         if question_type in ('hackerrank', 'all'):
-            hr_query = dict(library='hackerrank', filter=qfilter)
-            hr_questions = self._caller(endpoint, query_string=hr_query)['model']['questions']
-            questions += hr_questions
+            if qfilter == 'all':
+                for qtype in valid_question_types:
+                    hr_query = dict(library='hackerrank', filter=qtype)
+                    personal_questions = self._caller(endpoint, query_string=hr_query)['model']['questions']
+                    questions += personal_questions
+            else:
+                hr_query = dict(library='hackerrank', filter=qfilter)
+                hr_questions = self._caller(endpoint, query_string=hr_query)['model']['questions']
+                questions += hr_questions
 
         return questions
+
+
+    def create_question(self, test_id, **kwargs):
+        """
+        Create a question on a test in HackerRank.
+        Required kwargs: name, type, question, score
+        kwargs:
+            key:type, val_type: string, desc: what kind of question is it, coding, sudorank, etc
+            key:question, val_type: string, desc: html of the question description
+            key:score, val_type: integer, desc: the score to give the question
+            key:name, val_type: string, desc: the name of the question
+            key:internal_notes, val_type: string, desc: any internal use only notes
+
+            SUDORANK TYPE SPECIFIC KWARGS
+            key:sudorank_os, val_type:string, desc:when type of sudorank, the os, whether rhel7 or agnostic
+            key:visible_tags_array, val_type:list, desc:a list of tags for the question to have
+            key:setup, val_type: string, desc: the setup script for the question
+            key:solve, val_type: string, desc: the 'solution' script
+            key:check, val_type: string, desc: the 'check' script
+            key:cleanup, val_type: string, desc: any cleanup script
+
+            CODING TYPE SPECIFIC KWARGS
+            note that test cases are a different method
+            key:allowedLanguages, val_type:string, desc: the languages you want to allow. Valid values are: c,clojure,cobol,cpp,csharp,d,erlang,fortran,fsharp,go,groovy,haskell,java,java8,javascript,lua,objectivec,ocaml,pascal,perl,php,python,python3,racket,ruby,rust,sbcl,scala,smalltalk,swift,visualbasic,r,bash,octave
+            key:allowedLanguages, val_type:string, desc: the languages you want to allow. Valid values are: c,clojure,cobol,cpp,csharp,d,erlang,fortran,fsharp,go,groovy,haskell,java,java8,javascript,lua,objectivec,ocaml,pascal,perl,php,python,python3,racket,ruby,rust,sbcl,scala,smalltalk,swift,visualbasic,r,bash,octave
+            >> NOTE: The below should be read dynamically, for example, $languageKey_template is not an actual valid value, but python_template is valid as is php_template. Use the allowedLanguages values from above as reference
+            key: $languageKey_template, val_type:string, desc: the boilerplate code that you want candidates to be able to edit
+            key: $languageKey_template_head, val_type:string, desc: the boilerplate code that is NOT editable by candidates that is to be prepended to the 'template' boilerplate
+            key: $languageKey_template_tail, val_type:string, desc: the boilerplate code that is NOT editable by candidates that is to be appended to the 'template' boilerplate
+        """
+        endpoint = 'tests/%s/questions' % test_id
+        create_data = dict(
+            type=kwargs['type'],
+            tid=test_id,
+            name=kwargs['name'],
+            score=kwargs['score'],
+            visible_tags_array=kwargs['visible_tags_array'],
+            internal_notes=kwargs['internal_notes'],
+        )
+
+        question_id = self._caller(endpoint, method='POST', data=json.dumps(create_data))['model']['id']
+        # This is how the webapp does it, first does a minimal data POST, then a PUT
+        self.update_question(test_id, question_id, **kwargs)
 
 
     def update_question(self, test_id, question_id, **kwargs):
@@ -139,14 +223,26 @@ class HackerRankClient(object):
             key:question, val_type: string, desc: html of the question description
             key:score, val_type: integer, desc: the score to give the question
             key:name, val_type: string, desc: the name of the question
+            key:visible_tags_array, val_type:list, desc:a list of tags for the question to have
+            key:internal_notes, val_type: string, desc: any internal use only notes
+
+            SUDORANK TYPE SPECIFIC KWARGS
             key:sudorank_os, val_type:string, desc:when type of sudorank, the os, whether rhel7 or agnostic
             key:visible_tags_array, val_type:list, desc:a list of tags for the question to have
             key:setup, val_type: string, desc: the setup script for the question
             key:solve, val_type: string, desc: the 'solution' script
             key:check, val_type: string, desc: the 'check' script
             key:cleanup, val_type: string, desc: any cleanup script
-            key:internal_notes, val_type: string, desc: any internal use only notes
+
+            CODING TYPE SPECIFIC KWARGS
+            note that test cases are a different method
+            key:allowedLanguages, val_type:string, desc: the languages you want to allow. Valid values are: c,clojure,cobol,cpp,csharp,d,erlang,fortran,fsharp,go,groovy,haskell,java,java8,javascript,lua,objectivec,ocaml,pascal,perl,php,python,python3,racket,ruby,rust,sbcl,scala,smalltalk,swift,visualbasic,r,bash,octave
+            >> NOTE: The below should be read dynamically, for example, $languageKey_template is not an actual valid value, but python_template is valid as is php_template. Use the allowedLanguages values from above as reference
+            key: $languageKey_template, val_type:string, desc: the boilerplate code that you want candidates to be able to edit
+            key: $languageKey_template_head, val_type:string, desc: the boilerplate code that is NOT editable by candidates that is to be prepended to the 'template' boilerplate
+            key: $languageKey_template_tail, val_type:string, desc: the boilerplate code that is NOT editable by candidates that is to be appended to the 'template' boilerplate
         """
+
         endpoint = 'tests/%s/questions/%s' % (test_id, question_id)
         #TODO Validate that the question is in-fact writeable by the authenticated user
 
@@ -164,5 +260,27 @@ class HackerRankClient(object):
 
         return self._caller(endpoint, method='PUT', data=json.dumps(kwargs))
 
+
+    def get_test_cases(self, test_id, question_id):
+        """ Get all the current test cases for a particular question"""  
+        endpoint = 'tests/%s/questions/%s/testcases' % (test_id, question_id)
+        return self._caller(endpoint)['models']
+
+
+    def update_test_case(self, test_id, question_id, test_case_id, **kwargs):
+        """ 
+        Updates a test case for a coding type question 
+        kwargs:
+            name: The name that the test case should have, type: string
+            sample: whether to mark this as a sample test case, type: boolean
+            type: one of Easy, Medium, or Hard
+            score: the value of the test case, type: integer
+            input: that which should be inputed to the test case
+            output: the expected output of the test case
+        """
+
+        endpoint = 'tests/%s/questions/%s/testcases/%s' % (test_id, question_id, test_case_id)
+        kwargs['id'] = test_case_id
+        return self._caller(endpoint, method="PUT", data=json.dumps(kwargs))
 
 
