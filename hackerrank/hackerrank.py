@@ -81,6 +81,7 @@ class HackerRankClient(object):
         args:
             name: the name of the test, type: str
             duration: the duration, in minutes, of the test, type: int
+        return: the test id
         """
         endpoint = 'tests'
         create_data = dict(name=name, duration=duration)
@@ -88,7 +89,9 @@ class HackerRankClient(object):
 
         get_test_endpoint = 'tests/%s' % test_id
 
-        return self._caller(get_test_endpoint)
+        self._caller(get_test_endpoint)
+
+        return test_id
 
 
     def update_test(self, test_id, data, purge_tags=True):
