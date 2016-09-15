@@ -75,6 +75,13 @@ class HackerRankClient(object):
         return self._caller(endpoint)
 
 
+    def archive_test(self, test_id):
+        """ Archives a test. This is the closest thing to a DELETE operation for tests"""
+        endpoint = 'tests/change_tests_state'
+        post_data = {'state': 2, 'test_ids[]': test_id}
+        return self._caller(endpoint, method='POST', data=json.dumps(post_data))
+
+
     def create_test(self, name, duration):
         """
         Create a test object
@@ -85,11 +92,9 @@ class HackerRankClient(object):
         """
         endpoint = 'tests'
         create_data = dict(name=name, duration=duration)
-        test_id = self._caller(endpoint, method="POST", data=json.dumps(create_data))
+        test_id = self._caller(endpoint, method="POST", data=json.dumps(create_data))['data']['id']
 
         get_test_endpoint = 'tests/%s' % test_id
-
-        self._caller(get_test_endpoint)
 
         return test_id
 
@@ -102,7 +107,7 @@ class HackerRankClient(object):
             key: instructions, val_type: string, desc: The instructions for the test
             key: duration, val_type: integer, desc: The number, in mintues, of the test time limit
             key: purge_tags, val_type: boolean, desc: When 'tags' in 'data' whether to add to existing tags or purge current tags
-            key: collect_candidate_details, val_type: list, desc: The info you wish to collect from a candidate. Valid values are: full_name, work_experience, city, roll_number, email_address, year_of_graduation, cgpa, gpa, univ, phone_number, contact_recruiter, branch, major, degree, gender, role, resume, pgdegree, city_graduation
+            key: collect_data, val_type: list, desc: The info you wish to collect from a candidate. Valid values are: full_name, work_experience, city, roll_number, email_address, year_of_graduation, cgpa, gpa, univ, phone_number, contact_recruiter, branch, major, degree, gender, role, resume, pgdegree, city_graduation
             key: custom_acknowledge_text, val_type: str, desc: Any statement you wish candidates to acknowledge prior to commencing a test
             key: test_admins, val_type: str, desc: the email address of the test administrator
             key: sudorank_setupscript, val_type: str, desc: the setup script to run to bootstrap test VMs for SudoRank questions
