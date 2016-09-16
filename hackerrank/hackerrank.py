@@ -78,7 +78,7 @@ class HackerRankClient(object):
     def archive_test(self, test_id):
         """ Archives a test. This is the closest thing to a DELETE operation for tests"""
         endpoint = 'tests/change_tests_state'
-        post_data = {'state': 2, 'test_ids[]': test_id}
+        post_data = {'state': 2, 'test_ids': test_id}
         return self._caller(endpoint, method='POST', data=json.dumps(post_data))
 
 
