@@ -55,6 +55,8 @@ class HackerRankClient(object):
             r = requests.put(url, params=self.query_string, data=data, headers=self.headers)
         elif method == 'GET':
             r = requests.get(url, params=self.query_string, headers=self.headers)
+        elif method == 'DELETE':
+            r = requests.delete(url, params=self.query_string, headers=self.headers)
 
         try:
             return r.json()
@@ -134,6 +136,29 @@ class HackerRankClient(object):
         return self._caller(endpoint, method='PUT', data=json.dumps(data))
 
 
+    def remove_question_from_test(self, test_id, question_id):
+        """ Removes a question from a test """
+        endpoint = "tests/%s/questions/%s" % (test_id, question_id)
+        return self._caller(endpoint, method='DELETE')
+
+
+    def archive_question(self, question_id):
+        """ Archives a question """
+        endpoint = 'library/batch_ops'
+        post_data = {'action_type': 'archive', 'qids': test_id}
+        return self._caller(endpoint, method='POST', data=json.dumps(post_data))
+
+
+# TODO: Method not exposed in the webapp, hopefully HR support hooks it up
+#    def delete_question(self, question_id):
+#        endpoint = "questions/%s" % (question_id)
+#        return self._caller(endpoint, method='DELETE')
+
+    def get_question(self, question_id):
+        endpoint = "questions/%s" % (question_id)
+        return self._caller(endpoint)
+
+
     def get_all_questions(self, question_type='all', qfilter='sudorank'):
         """
         Get all the questions available to the authenticated account
@@ -180,7 +205,7 @@ class HackerRankClient(object):
         return questions
 
 
-    def create_question(self, test_id, **kwargs):
+    def create_question(self, **kwargs):
         """
         Create a question on a test in HackerRank.
         Required kwargs: name, type, question, score
@@ -208,11 +233,13 @@ class HackerRankClient(object):
             key: $languageKey_template_head, val_type:string, desc: the boilerplate code that is NOT editable by candidates that is to be prepended to the 'template' boilerplate
             key: $languageKey_template_tail, val_type:string, desc: the boilerplate code that is NOT editable by candidates that is to be appended to the 'template' boilerplate
         """
-        endpoint = 'tests/%s/questions' % test_id
+        # first create a question object so we can get the question id
+        endpoint = 'questions'
+
         create_data = dict(
             type=kwargs['type'],
-            tid=test_id,
             name=kwargs['name'],
+            question=kwargs['question'],
             score=kwargs['score'],
             visible_tags_array=kwargs['visible_tags_array'],
             internal_notes=kwargs['internal_notes'],
@@ -220,10 +247,10 @@ class HackerRankClient(object):
 
         question_id = self._caller(endpoint, method='POST', data=json.dumps(create_data))['model']['id']
         # This is how the webapp does it, first does a minimal data POST, then a PUT
-        self.update_question(test_id, question_id, **kwargs)
+        return self.update_question(question_id, **kwargs)
 
 
-    def update_question(self, test_id, question_id, **kwargs):
+    def update_question(self, question_id, **kwargs):
         """
         Updates a pre-existing question in HackerRank
         kwargs:
@@ -251,7 +278,7 @@ class HackerRankClient(object):
             key: $languageKey_template_tail, val_type:string, desc: the boilerplate code that is NOT editable by candidates that is to be appended to the 'template' boilerplate
         """
 
-        endpoint = 'tests/%s/questions/%s' % (test_id, question_id)
+        endpoint = 'questions/%s' % question_id
         #TODO Validate that the question is in-fact writeable by the authenticated user
 
         if kwargs['type'] == 'sudorank':
